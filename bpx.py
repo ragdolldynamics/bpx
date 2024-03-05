@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import os
-import sys
-import time
 import uuid
 import typing
 import logging
@@ -12,14 +9,19 @@ import collections
 import functools
 import ctypes  # For SessionUuid
 import itertools
-import math
+
+# Avoid accidental access from user
+import os as _os
+import sys as _sys
+import math as _math
+import time as _time
 
 import bpy
 import bmesh
 import mathutils
 
 # Convenience
-bpx = sys.modules[__name__]
+bpx = _sys.modules[__name__]
 
 # Expose native mathutils types
 Vector = mathutils.Vector
@@ -29,9 +31,9 @@ Euler = mathutils.Euler
 Quaternion = mathutils.Quaternion
 
 # Expose native math types
-radians = math.radians
-degrees = math.degrees
-pi = math.pi
+radians = _math.radians
+degrees = _math.degrees
+pi = _math.pi
 
 e_cube = 2
 e_empty = 11
@@ -78,7 +80,7 @@ class _Timing:
 
 
 # Developer flags
-BPX_DEVELOPER = bool(os.getenv("BPX_DEVELOPER", False))
+BPX_DEVELOPER = bool(_os.getenv("BPX_DEVELOPER", False))
 USE_PROFILING = BPX_DEVELOPER
 USE_ORDERED_SELECTION = True
 
@@ -167,12 +169,12 @@ SelectionOrder = True
 @contextlib.contextmanager
 def timing(name, verbose=False):
     t = _Timing()
-    t0 = time.perf_counter()
+    t0 = _time.perf_counter()
 
     try:
         yield t
     finally:
-        t1 = time.perf_counter()
+        t1 = _time.perf_counter()
         t.duration = (t1 - t0) * 1000
 
         if verbose:
@@ -186,10 +188,10 @@ def cumulative_timing(name):
     timing = _TIMINGS[name]
 
     try:
-        t0 = time.perf_counter()
+        t0 = _time.perf_counter()
         yield timing
     finally:
-        t1 = time.perf_counter()
+        t1 = _time.perf_counter()
         duration = (t1 - t0) * 1000  # milliseconds
         timing.duration += duration
         timing.count += 1
@@ -204,12 +206,12 @@ def cumulative_timing(name):
 def with_timing(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        t0 = time.perf_counter()
+        t0 = _time.perf_counter()
 
         try:
             return func(*args, **kwargs)
         finally:
-            t1 = time.perf_counter()
+            t1 = _time.perf_counter()
             duration = t1 - t0
             info("%s.%s in %.2fms" % (
                 func.__module__, func.__name__, duration * 1000
@@ -237,12 +239,12 @@ def with_cumulative_timing(func):
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        t0 = time.perf_counter()
+        t0 = _time.perf_counter()
 
         try:
             return func(*args, **kwargs)
         finally:
-            t1 = time.perf_counter()
+            t1 = _time.perf_counter()
             duration = (t1 - t0) * 1000  # milliseconds
             key = func.__module__.rsplit(".", 1)[-1]  # lib.vendor.bpx -> bpx
             key += "." + func.__name__
@@ -337,7 +339,7 @@ def report_cumulative_timings():
 
 class Timing:
     def __init__(self):
-        self._t0 = time.perf_counter()
+        self._t0 = _time.perf_counter()
 
     @property
     def s(self):
@@ -351,7 +353,7 @@ class Timing:
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
-        t1 = time.perf_counter()
+        t1 = _time.perf_counter()
         self._seconds = t1 - self._t0
 
 
@@ -712,8 +714,9 @@ class BpxProperty(metaclass=SingletonProperty):
         # Determine whether property is driven
         handle = xobj._handle
         anim = handle.animation_data
+        action = getattr(handle.animation_data, "action", None)
 
-        if anim:
+        if anim and action:
             action = handle.animation_data.action
             kwargs = {}
 
@@ -3571,17 +3574,15 @@ def test_is_alive(_):
 
 
 def is_background():
-    import sys
-    return "--background" in sys.argv
+    return "--background" in _sys.argv
 
 
 if __name__ == "__main__":
-    import sys
     import unittest
     import doctest
 
     # For familiarity
-    bpx = sys.modules[__name__]
+    bpx = _sys.modules[__name__]
 
     _BACKGROUND = True
 
